@@ -27,8 +27,12 @@ io.sockets.on('connection', socket => {
   console.log(`new connection ${socket.id}`);
 
   socket.on('set_name', name => {
-    socket.name = name;
-    socket.emit('success', 'name has been set');
+    if (!name) {
+      socket.emit('fail', 'Please enter a valid name');
+    } else {
+      socket.name = name;
+      socket.emit('success', 'name has been set');
+    }
   });
 
   socket.on('create_game', () => {
@@ -48,8 +52,11 @@ io.sockets.on('connection', socket => {
   });
 
   socket.on('join_game', roomId => {
+    const game = games_running.find(game => game.roomId === roomId);
     if (!socket.name) {
       socket.emit('fail', 'please enter your name first');
+    } else if (!game) {
+      socket.emit('fail', 'game was not found');
     } else {
       socket.join(roomId);
       socket.current_room = roomId;
@@ -60,10 +67,7 @@ io.sockets.on('connection', socket => {
         return game;
       });
 
-      socket.emit(
-        'game_joined',
-        games_running.find(game => game.roomId === roomId)
-      );
+      socket.emit('game_joined', game);
       io.to(roomId).emit('game started', makeFood());
       io.sockets.emit('games_running', games_running);
     }
