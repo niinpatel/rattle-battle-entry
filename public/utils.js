@@ -12,7 +12,12 @@ const updateGamesList = games => {
   });
 };
 
-const gameJoinedOrStarted = game => {
+const gameJoinedOrCreated = game => {
   mygame.innerText = `Your room id is - ${game.roomId}`;
   window.roomId = game.roomId;
+};
+
+const setNameOnGlobal = name => {
+  window.myname = name;
+  nameDiv.innerHTML = `Hi, ${window.myname}!`;
 };

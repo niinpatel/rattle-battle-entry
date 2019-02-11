@@ -21,14 +21,12 @@ let game_intervals = {};
 io.sockets.on('connection', socket => {
   console.log(`new connection ${socket.id}`);
 
-  socket.on('set_name', ({ name, no_confirm }) => {
+  socket.on('set_name', name => {
     if (!name) {
       socket.emit('fail', 'Please enter a valid name');
     } else {
       socket.name = name;
-      if (!no_confirm) {
-        socket.emit('success', 'name has been set');
-      }
+      socket.emit('name_recevied', name);
     }
   });
 
@@ -53,6 +51,8 @@ io.sockets.on('connection', socket => {
       socket.emit('fail', 'please enter your name first');
     } else if (!game) {
       socket.emit('fail', 'game was not found');
+    } else if (socket.name === game.snake1.name) {
+      socket.emit('fail', "both players' names must be unique");
     } else {
       socket.join(roomId);
       socket.current_room = roomId;
