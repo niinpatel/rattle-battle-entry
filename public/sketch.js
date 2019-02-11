@@ -1,5 +1,4 @@
-let socket = io();
-let iControl;
+const socket = io();
 let food;
 let snake1;
 let snake2;
