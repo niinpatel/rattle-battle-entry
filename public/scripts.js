@@ -7,6 +7,14 @@ const allgameslist = document.getElementById('allgames');
 const gameIdInpt = document.getElementById('gameid');
 const main = document.getElementById('main');
 
+if (localStorage.getItem('name')) {
+  window.myname = name;
+  socket.emit('set_name', {
+    name: localStorage.getItem('name'),
+    no_confirm: true
+  });
+}
+
 socket.on('fail', message => alert(`Fail: ${message}`));
 socket.on('success', message => alert(`Success: ${message}`));
 
@@ -23,7 +31,8 @@ socket.on('game started', data => {
 submitBtn.addEventListener('click', () => {
   const name = nameInpt.value;
   window.myname = name;
-  socket.emit('set_name', name);
+  localStorage.setItem('name', name);
+  socket.emit('set_name', { name });
 });
 
 startBtn.addEventListener('click', () => {

@@ -21,12 +21,14 @@ let game_intervals = {};
 io.sockets.on('connection', socket => {
   console.log(`new connection ${socket.id}`);
 
-  socket.on('set_name', name => {
+  socket.on('set_name', ({ name, no_confirm }) => {
     if (!name) {
       socket.emit('fail', 'Please enter a valid name');
     } else {
       socket.name = name;
-      socket.emit('success', 'name has been set');
+      if (!no_confirm) {
+        socket.emit('success', 'name has been set');
+      }
     }
   });
 
