@@ -5,28 +5,50 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <title>Document</title>
+
     <script
       src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js"
       integrity="sha256-yr4fRk/GU1ehYJPAs8P4JlTgu0Hdsp4ZKrx8bDEDC3I="
       crossorigin="anonymous"
     ></script>
+
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.7.3/p5.min.js"
+      integrity="sha256-gAw6iX1ivbkYgIvRfOXfTEm/w2DZLEB3W6RjSIEydio="
+      crossorigin="anonymous"
+    ></script>
+
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.7.3/addons/p5.dom.min.js"
+      integrity="sha256-iVr57I/ndUOFpOYMGk5ZVNgjRRgJfTrzR65I2C+oGFM="
+      crossorigin="anonymous"
+    ></script>
+
+    <script src="sketch.js"></script>
   </head>
   <body>
     <h1>Rattle Battle</h1>
 
-    <input type="text" placeholder="enter your name" name="name" id="name" />
-    <button id="submit">Submit</button>
+    <div id="main">
+      <input type="text" placeholder="enter your name" name="name" id="name" />
+      <button id="submit">Submit</button>
 
-    <br /><br />EITHER <br />
-    <button id="start">Start New Game</button>
+      <br /><br />EITHER <br />
+      <button id="start">Start New Game</button>
 
-    <br /><br />
-    OR <br />
-    <input type="text" placeholder="enter game id" name="gameid" id="gameid" />
-    <button id="join">Join</button>
+      <br /><br />
+      OR <br />
+      <input
+        type="text"
+        placeholder="enter game id"
+        name="gameid"
+        id="gameid"
+      />
+      <button id="join">Join</button>
 
-    <p id="mygame"></p>
-    <ul id="allgames"></ul>
+      <p id="mygame"></p>
+      <ul id="allgames"></ul>
+    </div>
 
     <script src="utils.js"></script>
     <script src="scripts.js"></script>

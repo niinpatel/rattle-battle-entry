@@ -13,6 +13,6 @@ const updateGamesList = games => {
 };
 
 const gameJoinedOrStarted = game => {
-  console.log(game);
   mygame.innerText = `Your room id is - ${game.roomId}`;
+  window.roomId = game.roomId;
 };

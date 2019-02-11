@@ -4,24 +4,19 @@ const port = process.env.PORT || 3000;
 
 const app = express();
 const socket = require('socket.io');
+const Game = require('./Game');
 
 const server = app.listen(port, err => {
   if (err) throw err;
   console.log('Listening on port ' + port);
 });
 
-function makeFood() {
-  const x = Math.floor(Math.random() * 40);
-  const y = Math.floor(Math.random() * 40);
-  return {
-    x,
-    y
-  };
-}
+const findGame = roomId => games_running.find(game => game.roomId === roomId);
 
 const io = socket(server);
 
 let games_running = [];
+let game_intervals = {};
 
 io.sockets.on('connection', socket => {
   console.log(`new connection ${socket.id}`);
@@ -41,18 +36,17 @@ io.sockets.on('connection', socket => {
     } else if (socket.current_room) {
       socket.emit('fail', 'you have already created a room');
     } else {
-      const roomId = (Math.random() * 100000000000).toFixed(0);
-      const game = { roomId, freeToJoin: true };
+      const game = new Game(socket.name);
       games_running.push(game);
-      socket.join(roomId);
-      socket.current_room = roomId;
+      socket.join(game.roomId);
+      socket.current_room = game.roomId;
       io.sockets.emit('games_running', games_running);
       socket.emit('game_created', game);
     }
   });
 
   socket.on('join_game', roomId => {
-    const game = games_running.find(game => game.roomId === roomId);
+    const game = findGame(roomId);
     if (!socket.name) {
       socket.emit('fail', 'please enter your name first');
     } else if (!game) {
@@ -60,21 +54,67 @@ io.sockets.on('connection', socket => {
     } else {
       socket.join(roomId);
       socket.current_room = roomId;
-      games_running = games_running.map(game => {
-        if (game.roomId === roomId) {
-          return { roomId, freeToJoin: false };
-        }
-        return game;
-      });
 
+      game.joinGame(socket.name);
       socket.emit('game_joined', game);
-      io.to(roomId).emit('game started', makeFood());
+      io.to(roomId).emit('game started', game);
+
+      game_intervals[game.roomId] = setInterval(() => {
+        if (!game.winner) {
+          if (game.running) {
+            game.moveSnakes();
+            io.to(game.roomId).emit('snakes_moved', game);
+          }
+        } else {
+          clearInterval(game_intervals[game.roomId]);
+          io.to(game.roomId).emit('game_ended', game.winner);
+        }
+      }, 200);
       io.sockets.emit('games_running', games_running);
     }
   });
 
   socket.on('check_games_running', () => {
     socket.emit('games_running', games_running);
+  });
+
+  socket.on('snakedirchanged', data => {
+    const { roomId, direction, name } = data;
+    const game = findGame(roomId);
+
+    const snakeToMove = game.snake1.name === name ? game.snake1 : game.snake2;
+
+    let dirx, diry;
+
+    switch (direction) {
+      case 'ArrowRight':
+        dirx = 1;
+        diry = 0;
+        snakeToMove.dir.x = dirx;
+        snakeToMove.dir.y = diry;
+        break;
+
+      case 'ArrowLeft':
+        dirx = -1;
+        diry = 0;
+        snakeToMove.dir.x = dirx;
+        snakeToMove.dir.y = diry;
+        break;
+
+      case 'ArrowUp':
+        dirx = 0;
+        diry = -1;
+        snakeToMove.dir.x = dirx;
+        snakeToMove.dir.y = diry;
+        break;
+
+      case 'ArrowDown':
+        dirx = 0;
+        diry = 1;
+        snakeToMove.dir.x = dirx;
+        snakeToMove.dir.y = diry;
+        break;
+    }
   });
 });
 

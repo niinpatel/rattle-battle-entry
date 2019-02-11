@@ -1,5 +1,3 @@
-let socket = io();
-
 const startBtn = document.getElementById('start');
 const joinBtn = document.getElementById('join');
 const nameInpt = document.getElementById('name');
@@ -7,6 +5,7 @@ const submitBtn = document.getElementById('submit');
 const mygame = document.getElementById('mygame');
 const allgameslist = document.getElementById('allgames');
 const gameIdInpt = document.getElementById('gameid');
+const main = document.getElementById('main');
 
 socket.on('fail', message => alert(`Fail: ${message}`));
 socket.on('success', message => alert(`Success: ${message}`));
@@ -16,12 +15,15 @@ socket.on('games_running', updateGamesList);
 socket.on('game_created', gameJoinedOrStarted);
 socket.on('game_joined', gameJoinedOrStarted);
 
-socket.on('game started', food => {
-  console.log('game has started! here eat these co-ordinates', food);
+socket.on('game started', data => {
+  console.log('game has started!');
+  main.style.display = 'none';
 });
 
 submitBtn.addEventListener('click', () => {
-  socket.emit('set_name', nameInpt.value);
+  const name = nameInpt.value;
+  window.myname = name;
+  socket.emit('set_name', name);
 });
 
 startBtn.addEventListener('click', () => {
