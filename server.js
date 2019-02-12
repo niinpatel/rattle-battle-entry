@@ -12,6 +12,9 @@ const server = app.listen(port, err => {
 });
 
 const findGame = roomId => games_running.find(game => game.roomId === roomId);
+const removeFromGamesRunning = roomId => {
+  return games_running.filter(game => game.roomId !== roomId);
+};
 
 const io = socket(server);
 
@@ -40,12 +43,19 @@ io.sockets.on('connection', socket => {
       games_running.push(game);
       socket.join(game.roomId);
       socket.current_room = game.roomId;
-      io.sockets.emit('games_running', games_running);
+      socket.broadcast.emit('games_running', games_running);
       socket.emit('game_created', game);
     }
   });
 
   socket.on('join_game', roomId => {
+    if (socket.current_room) {
+      const alreadyStartedGame = findGame(socket.current_room);
+      alreadyStartedGame.freeToJoin = false;
+      alreadyStartedGame.ended = true;
+      games_running = removeFromGamesRunning(socket.current_room);
+      socket.broadcast.emit('games_running', games_running);
+    }
     const game = findGame(roomId);
     if (!socket.name) {
       socket.emit('fail', 'please enter your name first');
@@ -62,14 +72,15 @@ io.sockets.on('connection', socket => {
       io.to(roomId).emit('game started', game);
 
       game_intervals[game.roomId] = setInterval(() => {
-        if (!game.winner) {
-          if (game.running) {
-            game.moveSnakes();
-            io.to(game.roomId).emit('snakes_moved', game);
-          }
+        if (!game.ended) {
+          game.moveSnakes();
+          io.to(game.roomId).emit('snakes_moved', game);
         } else {
           clearInterval(game_intervals[game.roomId]);
+          delete game_intervals[game.roomId];
+          games_running = removeFromGamesRunning(game.roomId);
           io.to(game.roomId).emit('game_ended', game.winner);
+          socket.broadcast.emit('games_running', games_running);
         }
       }, 200);
       socket.broadcast.emit('games_running', games_running);
@@ -78,6 +89,24 @@ io.sockets.on('connection', socket => {
 
   socket.on('check_games_running', () => {
     socket.emit('games_running', games_running);
+  });
+
+  socket.on('disconnect', () => {
+    io.to(socket.current_room).emit('player_left', socket.name);
+    const game = findGame(socket.current_room);
+
+    if (game) {
+      if (game.freeToJoin) {
+        game.freeToJoin = false;
+        socket.broadcast.emit('games_running', games_running);
+      } else {
+        game.winner =
+          socket.name === game.snake1.name
+            ? game.snake2.name
+            : game.snake1.name;
+      }
+      game.ended = true;
+    }
   });
 
   socket.on('snakedirchanged', data => {

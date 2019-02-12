@@ -21,7 +21,13 @@ function setup() {
 
   socket.on('game_ended', winner => {
     console.log(`${winner} wins`);
+    alert(`${winner} wins`);
     noLoop();
+  });
+
+  socket.on('player_left', name => {
+    console.log(`${name} left the game`);
+    alert(`${name} left the game`);
   });
 }
 

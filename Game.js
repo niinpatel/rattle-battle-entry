@@ -17,7 +17,7 @@ class Game {
     this.food = this.makeFood();
     this.interval = null;
     this.winner = null;
-    this.running = true;
+    this.ended = false;
   }
 
   joinGame(name2) {
@@ -62,11 +62,11 @@ class Game {
         const winner =
           this.snake1 === snake ? this.snake2.name : this.snake1.name;
         this.winner = winner;
-        this.running = false;
+        this.ended = true;
       } else if (collides) {
         const winner = otherSnake.name;
         this.winner = winner;
-        this.running = false;
+        this.ended = true;
       } else {
         snake.positions.pop();
         snake.positions.unshift(newHead);
