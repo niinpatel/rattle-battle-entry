@@ -58,18 +58,20 @@ function drawSnakes() {
 }
 
 function keyPressed() {
-  switch (key) {
-    case 'ArrowRight':
-    case 'ArrowLeft':
-    case 'ArrowUp':
-    case 'ArrowDown':
-      socket.emit('snakedirchanged', {
-        roomId: window.roomId,
-        direction: key,
-        name: window.myname
-      });
-      break;
-    default:
-      break;
+  if (snake1 && snake2 && food) {
+    switch (key) {
+      case 'ArrowRight':
+      case 'ArrowLeft':
+      case 'ArrowUp':
+      case 'ArrowDown':
+        socket.emit('snakedirchanged', {
+          roomId: window.roomId,
+          direction: key,
+          name: window.myname
+        });
+        break;
+      default:
+        break;
+    }
   }
 }
