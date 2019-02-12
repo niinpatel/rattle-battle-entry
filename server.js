@@ -49,6 +49,11 @@ io.sockets.on('connection', socket => {
   });
 
   socket.on('join_game', roomId => {
+    if (!socket.name) {
+      socket.emit('fail', 'please enter your name first');
+      return;
+    }
+
     if (socket.current_room) {
       const alreadyStartedGame = findGame(socket.current_room);
       alreadyStartedGame.freeToJoin = false;
@@ -56,10 +61,9 @@ io.sockets.on('connection', socket => {
       games_running = removeFromGamesRunning(socket.current_room);
       socket.broadcast.emit('games_running', games_running);
     }
+
     const game = findGame(roomId);
-    if (!socket.name) {
-      socket.emit('fail', 'please enter your name first');
-    } else if (!game) {
+    if (!game) {
       socket.emit('fail', 'game was not found');
     } else if (socket.name === game.snake1.name) {
       socket.emit('fail', "both players' names must be unique");
@@ -92,12 +96,12 @@ io.sockets.on('connection', socket => {
   });
 
   socket.on('disconnect', () => {
-    io.to(socket.current_room).emit('player_left', socket.name);
     const game = findGame(socket.current_room);
-
-    if (game) {
+    if (game && !game.ended) {
+      io.to(socket.current_room).emit('player_left', socket.name);
       if (game.freeToJoin) {
         game.freeToJoin = false;
+        games_running = removeFromGamesRunning(socket.current_room);
         socket.broadcast.emit('games_running', games_running);
       } else {
         game.winner =
