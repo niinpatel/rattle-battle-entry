@@ -72,7 +72,7 @@ io.sockets.on('connection', socket => {
           io.to(game.roomId).emit('game_ended', game.winner);
         }
       }, 200);
-      io.sockets.emit('games_running', games_running);
+      socket.broadcast.emit('games_running', games_running);
     }
   });
 

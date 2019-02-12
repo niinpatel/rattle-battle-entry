@@ -81,7 +81,7 @@ class Game {
       const [head] = snake.positions;
 
       if (this.food.x === head.x && this.food.y === head.y) {
-        snake.positions.push(this.food);
+        snake.positions.push({ ...this.food });
         this.food = this.makeFood();
       }
     });
