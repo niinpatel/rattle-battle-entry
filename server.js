@@ -11,14 +11,13 @@ const server = app.listen(port, err => {
   console.log('Listening on port ' + port);
 });
 
-const findGame = roomId => games_running.find(game => game.roomId === roomId);
-const removeFromGamesRunning = roomId => {
-  return games_running.filter(game => game.roomId !== roomId);
-};
-
 const io = socket(server);
 
-let games_running = [];
+const getCurrentlyJoinableGames = games_running => {
+  return Object.values(games_running).filter(game => game.freeToJoin);
+};
+
+let games_running = {};
 let game_intervals = {};
 
 io.sockets.on('connection', socket => {
@@ -40,10 +39,13 @@ io.sockets.on('connection', socket => {
       socket.emit('fail', 'you have already created a room');
     } else {
       const game = new Game(socket.name);
-      games_running.push(game);
+      games_running[game.roomId] = game;
       socket.join(game.roomId);
       socket.current_room = game.roomId;
-      socket.broadcast.emit('games_running', games_running);
+      socket.broadcast.emit(
+        'games_running',
+        getCurrentlyJoinableGames(games_running)
+      );
       socket.emit('game_created', game);
     }
   });
@@ -55,14 +57,17 @@ io.sockets.on('connection', socket => {
     }
 
     if (socket.current_room) {
-      const alreadyStartedGame = findGame(socket.current_room);
+      const alreadyStartedGame = games_running[socket.current_room];
       alreadyStartedGame.freeToJoin = false;
       alreadyStartedGame.ended = true;
-      games_running = removeFromGamesRunning(socket.current_room);
-      socket.broadcast.emit('games_running', games_running);
+      delete games_running[socket.current_room];
+      socket.broadcast.emit(
+        'games_running',
+        getCurrentlyJoinableGames(games_running)
+      );
     }
 
-    const game = findGame(roomId);
+    const game = games_running[roomId];
     if (!game) {
       socket.emit('fail', 'game was not found');
     } else if (socket.name === game.snake1.name) {
@@ -82,27 +87,39 @@ io.sockets.on('connection', socket => {
         } else {
           clearInterval(game_intervals[game.roomId]);
           delete game_intervals[game.roomId];
-          games_running = removeFromGamesRunning(game.roomId);
+          delete games_running[game.roomId];
           io.to(game.roomId).emit('game_ended', game.winner);
-          socket.broadcast.emit('games_running', games_running);
+          socket.broadcast.emit(
+            'games_running',
+            getCurrentlyJoinableGames(games_running)
+          );
         }
       }, 200);
-      socket.broadcast.emit('games_running', games_running);
+      socket.broadcast.emit(
+        'games_running',
+        getCurrentlyJoinableGames(games_running)
+      );
     }
   });
 
   socket.on('check_games_running', () => {
-    socket.emit('games_running', games_running);
+    socket.broadcast.emit(
+      'games_running',
+      getCurrentlyJoinableGames(games_running)
+    );
   });
 
   socket.on('disconnect', () => {
-    const game = findGame(socket.current_room);
+    const game = games_running[socket.current_room];
     if (game && !game.ended) {
       io.to(socket.current_room).emit('player_left', socket.name);
       if (game.freeToJoin) {
         game.freeToJoin = false;
-        games_running = removeFromGamesRunning(socket.current_room);
-        socket.broadcast.emit('games_running', games_running);
+        delete games_running[socket.current_room];
+        socket.broadcast.emit(
+          'games_running',
+          getCurrentlyJoinableGames(games_running)
+        );
       } else {
         game.winner =
           socket.name === game.snake1.name
@@ -115,7 +132,7 @@ io.sockets.on('connection', socket => {
 
   socket.on('snakedirchanged', data => {
     const { roomId, direction, name } = data;
-    const game = findGame(roomId);
+    const game = games_running[roomId];
 
     const snakeToMove = game.snake1.name === name ? game.snake1 : game.snake2;
 
